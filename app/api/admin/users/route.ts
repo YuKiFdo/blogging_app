@@ -1,17 +1,19 @@
 // app/api/admin/users/route.ts
-import prisma from '@/lib/prisma';
-import { auth } from "@/app/auth";
+import { PrismaClient } from "@/generated/prisma";
+import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
-import type { CustomSession } from "@/types/next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+
+const prisma = new PrismaClient();
 
 export async function GET() {
-  const session = await auth();
+  const session = await getServerSession(authOptions);
 
-  if (!session || !(session as CustomSession).user?.role) {
+  if (!session || !(session).user?.role) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userRole = (session as CustomSession).user?.role;
+  const userRole = (session).user?.role;
   if (!userRole || userRole !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -26,8 +28,8 @@ export async function GET() {
       createdAt: true,
       _count: {
         select: {
-          posts: true,
-          comments: true,
+          Post: true,
+          Comment: true,
         },
       },
     },
@@ -37,26 +39,24 @@ export async function GET() {
   return NextResponse.json(users);
 }
 
-// app/api/admin/users/[id]/route.ts
 export async function PUT(
   req: Request,
   { params }: { params: { id: string } }
 ) {
-  const session = await auth();
+  const session = await getServerSession(authOptions);
 
-  if (!session || !(session as CustomSession).user?.role) {
+  if (!session || !(session).user?.role) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userRole = (session as CustomSession).user?.role;
+  const userRole = (session).user?.role;
   if (!userRole || userRole !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { role } = await req.json();
 
-  // Prevent changing own role
-  const userId = (session as CustomSession).user?.id;
+  const userId = (session).user?.id;
   if (params.id === userId) {
     return NextResponse.json(
       { error: "Cannot change your own role" },
