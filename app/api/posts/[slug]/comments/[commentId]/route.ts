@@ -63,6 +63,7 @@ export async function PATCH(
 
     return NextResponse.json(updatedComment);
   } catch (error) {
+    console.error("Error updating comment:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }
@@ -106,8 +107,9 @@ export async function DELETE(
       { status: 200 }
     );
   } catch (error) {
+    console.error("Error deleting comment:", error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: "Internal Server Error"  },
       { status: 500 }
     );
   }
