@@ -87,9 +87,7 @@ export async function PATCH(request: Request, context: { params: any }) {
 
     const post = await prisma.post.findUnique({
       where: { slug },
-      include: {
-        User: true,
-      },
+      select: { id: true, User: { select: { id: true } } },
     });
 
     if (!post) {
@@ -100,8 +98,7 @@ export async function PATCH(request: Request, context: { params: any }) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
     }
 
-    const { title, content, imageUrl, categoryIds, tagIds } =
-      await request.json();
+    const { title, content, imageUrl, categoryIds, tagIds } = await request.json();
 
     if (!title || !content) {
       return NextResponse.json(
@@ -140,32 +137,15 @@ export async function PATCH(request: Request, context: { params: any }) {
         },
         Category: true,
         Tag: true,
-        Comment: {
-          include: {
-            User: {
-              select: {
-                id: true,
-                name: true,
-                image: true,
-              },
-            },
-          },
-          orderBy: {
-            createdAt: "desc",
-          },
-        },
-        Like: {
-          select: {
-            id: true,
-            userId: true,
-          },
-        },
-        SavedPost: {
-          select: {
-            id: true,
-            userId: true,
-          },
-        },
+        // 🐢 Optional heavy data – uncomment only if needed
+        // Comment: {
+        //   include: {
+        //     User: { select: { id: true, name: true, image: true } },
+        //   },
+        //   orderBy: { createdAt: "desc" },
+        // },
+        // Like: { select: { id: true, userId: true } },
+        // SavedPost: { select: { id: true, userId: true } },
       },
     });
 
@@ -176,10 +156,9 @@ export async function PATCH(request: Request, context: { params: any }) {
       { message: "Internal server error" },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
+
 
 //delete
 
