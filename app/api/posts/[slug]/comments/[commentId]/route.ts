@@ -7,10 +7,7 @@ import type { NextRequest } from "next/server";
 const prisma = new PrismaClient();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function PATCH(
-  request: NextRequest,
-  context: { params: any}
-) {
+export async function PATCH(request: NextRequest, context: { params: any}) {
   try {
     const session = await getServerSession(authOptions);
     const { slug, commentId } = context.params;
