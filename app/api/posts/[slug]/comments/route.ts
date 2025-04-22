@@ -1,4 +1,3 @@
-// app/api/posts/[postId]/comments/route.ts
 import { PrismaClient } from "@/generated/prisma";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";

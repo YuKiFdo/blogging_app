@@ -1,4 +1,3 @@
-// app/api/posts/[postId]/comments/route.ts
 import { PrismaClient } from "@/generated/prisma";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
@@ -8,13 +7,11 @@ const prisma = new PrismaClient();
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { slug: string, commentId: string } }
+context: { params: { slug: string, commentId: string } }
 ) {
   const session = await getServerSession(authOptions);
 
-  const resolvedParams = await Promise.resolve(params);
-
-  const {slug, commentId} = resolvedParams as { slug: string, commentId: string };
+  const { slug, commentId } = context.params;
 
   if (!slug) {
     return NextResponse.json({ error: "Invalid slug" }, { status: 400 });
@@ -81,13 +78,11 @@ export async function PATCH(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { slug: string, commentId: string } }
+  context: { params: { slug: string; commentId: string } }
 ) {
+  const { slug, commentId } = context.params;
+
   const session = await getServerSession(authOptions);
-
-  const resolvedParams = await Promise.resolve(params);
-
-  const {slug, commentId} = resolvedParams as { slug: string, commentId: string };
 
   if (!slug) {
     return NextResponse.json({ error: "Invalid slug" }, { status: 400 });
@@ -109,20 +104,17 @@ export async function DELETE(
     return NextResponse.json({ error: "Post not found" }, { status: 404 });
   }
 
-  const commentss = await prisma.comment.findUnique({
-    where: { id: commentId },
-  });
-
-  if (!commentss) {
-    return NextResponse.json({ error: "Comment not found" }, { status: 404 });
-  }
-
-  const comment = await prisma.comment.delete({
+  const comment = await prisma.comment.findUnique({
     where: { id: commentId },
   });
 
   if (!comment) {
-    return NextResponse.json({ error: "Failed to delete comment" }, { status: 500 });
+    return NextResponse.json({ error: "Comment not found" }, { status: 404 });
   }
+
+  await prisma.comment.delete({
+    where: { id: commentId },
+  });
+
   return NextResponse.json({ message: "Comment deleted successfully" }, { status: 200 });
 }
