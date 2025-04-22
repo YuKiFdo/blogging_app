@@ -1,6 +1,21 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals.push('_http_common');
+      
+      config.externals.push({
+        '@prisma/client': '@prisma/client',
+        '.prisma/client': '.prisma/client'
+      });
+    }
+    return config;
+  },
+  
+  // Optional: Enable standalone output for better Prisma compatibility
+  output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined,
+  
   images: {
     remotePatterns: [
       {
