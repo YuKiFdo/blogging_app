@@ -27,7 +27,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { CommentSection } from "@/components/posts/slug/CommentSection";
-import { useSearchParams } from "next/navigation";
 import { Trash } from "lucide-react";
 
 interface Post {
@@ -81,14 +80,12 @@ export default function BlogPostPage() {
   const userId = session?.user?.id as string;
   const userRole = session?.user?.role;
   const [post, setPost] = useState<Post | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   const [liked, setLiked] = useState<boolean>(false);
   const [likeCount, setLikeCount] = useState<number>(0);
   const [commentCount, setCommentCount] = useState<number>(0);
   const [saved, setSaved] = useState<boolean>(false);
-  const searchParams = useSearchParams();
   useEffect(() => {
       const fetchPost = async () => {
         try {
