@@ -2,67 +2,43 @@ import { PrismaClient } from "@/generated/prisma";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import type { NextRequest } from "next/server";
 
 const prisma = new PrismaClient();
 
 export async function PATCH(
-  req: Request,
-context: { params: { slug: string, commentId: string } }
+  req: NextRequest,
+  { params }: { params: { slug: string; commentId: string } }
 ) {
   const session = await getServerSession(authOptions);
+  const { slug, commentId } = params;
 
-  const { slug, commentId } = context.params;
-
-  if (!slug) {
-    return NextResponse.json({ error: "Invalid slug" }, { status: 400 });
-  }
-
-  if (!commentId) {
-    return NextResponse.json({ error: "Invalid commentId" }, { status: 400 });
+  if (!slug || !commentId) {
+    return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
   }
 
   if (!session || !session.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const post = await prisma.post.findUnique({
-    where: { id: slug },
-  });
-  
-
+  const post = await prisma.post.findUnique({ where: { id: slug } });
   if (!post) {
     return NextResponse.json({ error: "Post not found" }, { status: 404 });
   }
 
-  const commentss = await prisma.comment.findUnique({
-    where: { id: commentId },
-  });
-
-  if (!commentss) {
+  const existingComment = await prisma.comment.findUnique({ where: { id: commentId } });
+  if (!existingComment) {
     return NextResponse.json({ error: "Comment not found" }, { status: 404 });
   }
 
   const { content } = await req.json();
-
   if (!content) {
-    return NextResponse.json(
-      { error: "Comment content is required" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Content required" }, { status: 400 });
   }
 
-  const comment = await prisma.comment.update({
+  const updatedComment = await prisma.comment.update({
     where: { id: commentId },
-    data: {
-      content,
-    },
-  });
-
-  if (!comment) {
-    return NextResponse.json({ error: "Failed to update comment" }, { status: 500 });
-  }
-  const commentwithAuther = await prisma.comment.findUnique({
-    where: { id: commentId },
+    data: { content },
     include: {
       User: {
         select: {
@@ -73,48 +49,36 @@ context: { params: { slug: string, commentId: string } }
       },
     },
   });
-  return NextResponse.json(commentwithAuther, { status: 200 });
+
+  return NextResponse.json(updatedComment, { status: 200 });
 }
 
 export async function DELETE(
-  req: Request,
-  context: { params: { slug: string; commentId: string } }
+  req: NextRequest,
+  { params }: { params: { slug: string; commentId: string } }
 ) {
-  const { slug, commentId } = context.params;
-
+  const { slug, commentId } = params;
   const session = await getServerSession(authOptions);
 
-  if (!slug) {
-    return NextResponse.json({ error: "Invalid slug" }, { status: 400 });
-  }
-
-  if (!commentId) {
-    return NextResponse.json({ error: "Invalid commentId" }, { status: 400 });
+  if (!slug || !commentId) {
+    return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
   }
 
   if (!session || !session.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const post = await prisma.post.findUnique({
-    where: { id: slug },
-  });
-
+  const post = await prisma.post.findUnique({ where: { id: slug } });
   if (!post) {
     return NextResponse.json({ error: "Post not found" }, { status: 404 });
   }
 
-  const comment = await prisma.comment.findUnique({
-    where: { id: commentId },
-  });
-
+  const comment = await prisma.comment.findUnique({ where: { id: commentId } });
   if (!comment) {
     return NextResponse.json({ error: "Comment not found" }, { status: 404 });
   }
 
-  await prisma.comment.delete({
-    where: { id: commentId },
-  });
+  await prisma.comment.delete({ where: { id: commentId } });
 
   return NextResponse.json({ message: "Comment deleted successfully" }, { status: 200 });
 }
