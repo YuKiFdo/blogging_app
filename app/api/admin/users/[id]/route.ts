@@ -5,7 +5,10 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 const prisma = new PrismaClient();
 
-export async function GET() {
+export async function PUT(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
   const session = await getServerSession(authOptions);
 
   if (!session || !(session).user?.role) {
@@ -17,24 +20,26 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const users = await prisma.user.findMany({
+  const { role } = await req.json();
+
+  const userId = (session).user?.id;
+  if (params.id === userId) {
+    return NextResponse.json(
+      { error: "Cannot change your own role" },
+      { status: 400 }
+    );
+  }
+
+  const user = await prisma.user.update({
+    where: { id: params.id },
+    data: { role },
     select: {
       id: true,
       name: true,
       email: true,
-      image: true,
       role: true,
-      createdAt: true,
-      _count: {
-        select: {
-          Post: true,
-          Comment: true,
-        },
-      },
     },
-    orderBy: { createdAt: "desc" },
   });
 
-  return NextResponse.json(users);
+  return NextResponse.json(user);
 }
-
