@@ -1,13 +1,10 @@
 import GithubProvider from "next-auth/providers/github"
 import GoogleProvider from "next-auth/providers/google"
-import { PrismaClient } from "@/generated/prisma"
+import { prisma } from "@/lib/prisma";
 import { NextAuthOptions } from "next-auth"
 import { JWT } from "next-auth/jwt"
 import { User, Session } from "next-auth"
 import { DefaultSession } from "next-auth"
-
-
-const prisma = new PrismaClient()
 
 declare module "next-auth" {
     interface Session {

@@ -1,10 +1,9 @@
-import { PrismaClient } from "@/generated/prisma";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import type { NextRequest } from "next/server";
+import { prisma } from "@/lib/prisma";
 
-const prisma = new PrismaClient();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function PATCH(request: NextRequest, context: { params: any}) {
