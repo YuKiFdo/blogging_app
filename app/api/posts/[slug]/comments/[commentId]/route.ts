@@ -61,10 +61,10 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { slug: string; commentId: string } }
+  context: { params: { [key: string]: string | string[] } }
 ) {
   try {
-    const { slug, commentId } = params;
+    const { slug, commentId } = context.params as { slug: string; commentId: string };
     const session = await getServerSession(authOptions);
 
     if (!slug || !commentId) {
