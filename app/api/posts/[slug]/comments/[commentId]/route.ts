@@ -8,10 +8,10 @@ const prisma = new PrismaClient();
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { slug: string; commentId: string } }
+  context: { params: { slug: string; commentId: string } }
 ) {
   const session = await getServerSession(authOptions);
-  const { slug, commentId } = params;
+  const { slug, commentId } = context.params;
 
   if (!slug || !commentId) {
     return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
@@ -55,9 +55,9 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { slug: string; commentId: string } }
+  context: { params: { slug: string; commentId: string } }
 ) {
-  const { slug, commentId } = params;
+  const { slug, commentId } = context.params;
   const session = await getServerSession(authOptions);
 
   if (!slug || !commentId) {
