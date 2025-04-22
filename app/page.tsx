@@ -1,103 +1,254 @@
+"use client";
+import { Navbar } from "@/components/main/navbar/Navbar";
+import { BlogCard } from "@/components/main/BlogCard";
+import { MobileSignInBanner } from "@/components/common/MobileSignInBanner";
+import { useState, useEffect } from "react";
+import { Loading } from "@/components/common/Loading";
+import { CreatePostDialog } from "@/components/main/CreatePost";
+import { useSession } from "next-auth/react";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import Image from "next/image";
 
-export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+interface Blog {
+  id: string;
+  title: string;
+  content: string;
+  imageUrl: string | null;
+  slug: string;
+  User: {
+    name: string;
+    image: string | null;
+  };
+  Category: {
+    name: string;
+  }[];
+  Tag: {
+    name: string;
+  }[];
+  createdAt: string;
+}
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+export default function Home() {
+  const [blogs, setBlogs] = useState<Blog[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const { data: session } = useSession();
+  const userRole = session?.user?.role;
+  const [selectedCategory, setSelectedCategory] = useState<string | null>('all');
+  const [selectedTag, setSelectedTag] = useState<string | null>('all');
+  const [searchAuthor, setSearchAuthor] = useState<string>("");
+  const [authorSuggestions, setAuthorSuggestions] = useState<
+    { name: string; image?: string | null }[]
+  >([]);
+  const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
+
+  const allAuthors = Array.from(
+    new Map(blogs.map((blog) => [blog.User.name, blog.User.image])).entries()
+  ).map(([name, image]) => ({ name, image }));
+
+  useEffect(() => {
+    if (searchAuthor.trim() !== "") {
+      const filtered = allAuthors.filter((author) =>
+        author.name.toLowerCase().includes(searchAuthor.toLowerCase())
+      );
+      console.log("Filtered authors:", filtered);
+      setAuthorSuggestions(filtered);
+      setShowSuggestions(true);
+    } else {
+      setShowSuggestions(false);
+    }
+  }, [searchAuthor, blogs]);
+
+  const filteredBlogs = blogs.filter((blog) => {
+    const categoryMatch =
+      !selectedCategory || selectedCategory === "all"
+        ? true
+        : blog.Category.some((cat) => cat.name === selectedCategory);
+
+    const tagMatch =
+      !selectedTag || selectedTag === "all"
+        ? true
+        : blog.Tag.some((tag) => tag.name === selectedTag);
+
+    const authorMatch = searchAuthor
+      ? blog.User.name.toLowerCase().includes(searchAuthor.toLowerCase())
+      : true;
+
+    return categoryMatch && tagMatch && authorMatch;
+  });
+
+  const fetchBlogs = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await fetch("/api/posts");
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log("Fetched posts:", data.posts);
+        setBlogs(data.posts);
+      } else {
+        setError(data.error || "Failed to fetch posts");
+      }
+    } catch (error) {
+      setError("An error occurred while fetching posts.");
+      console.error("Error fetching posts:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBlogs();
+  }, []);
+
+  return (
+    <div className="min-h-screen">
+      <Navbar />
+      <main className="w-full px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
+        <div className="flex items-center justify-between mb-4 sm:mb-6 lg:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold">Latest Blog Posts</h1>
+          {session && userRole !== "READER" && (
+            <CreatePostDialog onPostCreated={fetchBlogs} />
+          )}
+        </div>
+        {loading && <Loading justify="start" margin="mt-25" />}
+        {error && (
+          <div className="text-red-500 text-sm sm:text-base">{error}</div>
+        )}
+
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between w-full">
+          <div className="flex flex-wrap gap-4">
+            <div className="flex gap-4 w-full sm:w-auto">
+            <Select
+              value={selectedCategory || ""}
+              onValueChange={(value) => setSelectedCategory(value)}
+            >
+              <SelectTrigger className="md:w-[180px] w-full">
+                <SelectValue placeholder="Filter by Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {[...new Set(blogs.flatMap((b) => b.Category.map((c) => c.name)))].map(
+                  (name) => (
+                    <SelectItem key={name} value={name}>
+                      {name}
+                    </SelectItem>
+                  )
+                )}
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={selectedTag || ""}
+              onValueChange={(value) => setSelectedTag(value)}
+            >
+              <SelectTrigger className="md:w-[180px] w-full">
+                <SelectValue placeholder="Filter by Tag" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Tags</SelectItem>
+                {[...new Set(blogs.flatMap((b) => b.Tag.map((t) => t.name)))].map(
+                  (name) => (
+                    <SelectItem key={name} value={name}>
+                      {name}
+                    </SelectItem>
+                  )
+                )}
+              </SelectContent>
+            </Select>
+            </div>
+
+            <div className="relative w-full md:w-[180px]">
+              <Input
+                type="text"
+                placeholder="Filter by Author"
+                value={searchAuthor}
+                onChange={(e) => setSearchAuthor(e.target.value)}
+                className="w-full"
+                onFocus={() => {
+                  if (searchAuthor) setShowSuggestions(true);
+                }}
+                onBlur={() => {
+                  setTimeout(() => setShowSuggestions(false), 100);
+                }}
+              />
+              {showSuggestions && (
+                <div className="absolute z-10 w-full text-foreground border border-gray-700 bg-card rounded shadow-md max-h-40 overflow-y-auto">
+                  {authorSuggestions.length > 0 ? (
+                    authorSuggestions.map((author) => (
+                      <div
+                        key={author.name}
+                        className="flex items-center px-3 py-2 gap-2 hover:bg-accent cursor-pointer text-sm text-foreground"
+                        onClick={() => {
+                          setSearchAuthor(author.name);
+                          setShowSuggestions(false);
+                        }}
+                      >
+                        {author.image ? (
+                          <Image
+                            src={author.image}
+                            alt={author.name}
+                            className="w-6 h-6 rounded-full object-cover"
+                            width={24}
+                            height={24}
+                          />
+                        ) : (
+                          <div className="w-6 h-6 rounded-full bg-muted" />
+                        )}
+                        <span>{author.name}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="px-3 py-2 text-sm text-gray-500">
+                      No authors found
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {(selectedCategory !=='all' || selectedTag !=='all' || searchAuthor) && (
+              <Button
+              className="w-full sm:w-auto"
+                variant="outline"
+                onClick={() => {
+                  setSelectedCategory("all");
+                  setSelectedTag("all");
+                  setSearchAuthor("");
+                }}
+              >
+                Reset
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {filteredBlogs.map((blog) => (
+            <BlogCard
+              key={blog.id}
+              slug={blog.slug}
+              date={new Date(blog.createdAt).toLocaleDateString()}
+              title={blog.title}
+              image={blog.imageUrl}
+              category={blog.Category.map((category) => category.name).join(", ")}
+              tags={blog.Tag.map((tag) => tag.name).join(", ")}
+              excerpt={blog.content.substring(0, 100) + "..."}
+              author={blog.User.name}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+          ))}
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      <MobileSignInBanner />
     </div>
   );
 }
