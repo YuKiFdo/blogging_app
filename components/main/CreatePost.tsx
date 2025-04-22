@@ -220,7 +220,7 @@ export function CreatePostDialog({ onPostCreated }: CreatePostDialogProps) {
           <div className="flex justify-center items-center py-8">
             <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
             <span className="ml-2 text-gray-500">
-              Loading categories and tags...
+              Getting Info ...
             </span>
           </div>
         ) : (
