@@ -27,7 +27,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { CommentSection } from "@/components/posts/slug/CommentSection";
-import { useSearchParams } from "next/navigation";
 import { Trash } from "lucide-react";
 
 interface Post {
@@ -73,74 +72,47 @@ interface Post {
   }[];
 }
 
-interface BlogPostPageProps {
-  initialPost: Post | null;
-  error?: string | null;
-}
-
-export default function BlogPostPage({ initialPost, error: initialError }: BlogPostPageProps) {
+export default function BlogPostPage() {
   const router = useRouter();
   const params = useParams();
   const slug = params.slug as string;
   const { data: session } = useSession();
   const userId = session?.user?.id as string;
   const userRole = session?.user?.role;
-  const [post, setPost] = useState<Post | null>(initialPost);
-  const [loading, setLoading] = useState<boolean>(!initialPost);
+  const [post, setPost] = useState<Post | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+
   const [liked, setLiked] = useState<boolean>(false);
   const [likeCount, setLikeCount] = useState<number>(0);
   const [commentCount, setCommentCount] = useState<number>(0);
   const [saved, setSaved] = useState<boolean>(false);
-  const searchParams = useSearchParams();
-  const error = searchParams.get("error") || initialError;
-
-  // Handle errors
   useEffect(() => {
-    if (error === "no-access") {
-      toast.error("You don't have access to do this action.");
-      const timer = setTimeout(() => {
-        router.replace(`/blog/${slug}`);
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [error, router, slug]);
-
-  useEffect(() => {
-    if (initialPost) {
-      const userLiked = Array.isArray(initialPost.Like) && 
-        initialPost.Like.some((like) => like.userId === userId);
-      const userSaved = Array.isArray(initialPost.SavedPost) && 
-        initialPost.SavedPost.some((savedPost) => savedPost.userId === userId);
-      
-      setLiked(userLiked);
-      setSaved(userSaved);
-      setLikeCount(initialPost.Like.length);
-      setCommentCount(initialPost.Comment.length);
-    }
-  }, [initialPost, userId]);
-
-  useEffect(() => {
-    if ((!initialPost || shouldRefetch()) && slug) {
       const fetchPost = async () => {
         try {
           setLoading(true);
           const response = await fetch(`/api/posts/${slug}`, {
-            next: { tags: [`post-${slug}`] } 
+            next: { tags: [`post-${slug}`] },
           });
-          
+
           if (!response.ok) {
             throw new Error("Failed to fetch post");
           }
-          
+
           const data = await response.json();
           setPost(data);
-          
-          const userLiked = Array.isArray(data.Like) && 
-            data.Like.some((like: { userId: string }) => like.userId === userId);
+
+          const userLiked =
+            Array.isArray(data.Like) &&
+            data.Like.some(
+              (like: { userId: string }) => like.userId === userId
+            );
           setLiked(userLiked);
 
-          const userSaved = Array.isArray(data.SavedPost) && 
-            data.SavedPost.some((savedPost: { userId: string }) => savedPost.userId === userId);
+          const userSaved =
+            Array.isArray(data.SavedPost) &&
+            data.SavedPost.some(
+              (savedPost: { userId: string }) => savedPost.userId === userId
+            );
           setSaved(userSaved);
 
           setLikeCount(data.Like.length);
@@ -152,40 +124,35 @@ export default function BlogPostPage({ initialPost, error: initialError }: BlogP
         }
       };
       fetchPost();
-    }
-  }, [slug, userId, initialPost]);
+  }, [slug, userId]);
 
-  const shouldRefetch = () => {
-    if (!initialPost) return true;
-    return false;
-  };
 
   const handleLike = async () => {
     try {
       const response = await fetch(`/api/posts/${post?.id}/likes`, {
         method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
-      
+
       if (response.status === 401) {
         toast.error("You need to be logged in to like a post.");
         return;
       }
-      
+
       if (response.status === 404) {
         toast.error("Post not found.");
         return;
       }
-      
+
       await fetch(`/api/revalidate?slug=${post?.slug}`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
-      
+
       setLiked(!liked);
       setLikeCount(liked ? likeCount - 1 : likeCount + 1);
     } catch (error) {
@@ -198,20 +165,20 @@ export default function BlogPostPage({ initialPost, error: initialError }: BlogP
       const response = await fetch(`/api/posts/${post?.id}/save`, {
         method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
-      
+
       if (response.status === 401) {
         toast.error("You need to be logged in to save a post.");
         return;
       }
-      
+
       if (response.status === 404) {
         toast.error("Post not found.");
         return;
       }
-      
+
       setSaved(!saved);
       toast.success(
         saved ? "Post removed from Read Later" : "Post saved for Read Later."
@@ -226,16 +193,16 @@ export default function BlogPostPage({ initialPost, error: initialError }: BlogP
       const res = await fetch(`/api/posts/${post?.slug}`, {
         method: "DELETE",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
-      
+
       if (res.ok) {
         toast.success("Post deleted.");
-        await fetch('/api/revalidate?path=/blog', {
-          method: 'POST',
+        await fetch("/api/revalidate?path=/blog", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
         });
         router.push("/");

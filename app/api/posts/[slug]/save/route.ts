@@ -1,21 +1,15 @@
-// app/api/posts/[postId]/save/route.ts
-import { PrismaClient } from "@/generated/prisma";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import crypto from "crypto";
+import { prisma } from "@/lib/prisma";
 
-const prisma = new PrismaClient();
 
-export async function POST(
-  req: Request,
-  { params }: { params: { slug: string } }
-) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function POST(req: Request, context: { params: any }) {
   const session = await getServerSession(authOptions);
 
-  const resolvedParams = await Promise.resolve(params);
-
-  const slug = resolvedParams.slug as string;
+  const slug = context.params.slug as string;
 
   if (!slug) {
     return NextResponse.json({ error: "Invalid slug" }, { status: 400 });

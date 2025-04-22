@@ -1,20 +1,16 @@
-// app/api/posts/[slug]/route.ts
-import { NextResponse } from 'next/server'
-import { PrismaClient } from "@/generated/prisma";
+import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
-const prisma = new PrismaClient();
 
-export async function GET(
-  request: Request,
-  { params }: { params: { slug: string } }
-) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function GET(request: Request, context: { params: any }) {
   try {
-    const { slug } =await params
+    const { slug } = context.params;
 
     if (!slug) {
-      return NextResponse.json({ message: 'Invalid slug' }, { status: 400 })
+      return NextResponse.json({ message: "Invalid slug" }, { status: 400 });
     }
 
     const post = await prisma.post.findUnique({
@@ -41,7 +37,7 @@ export async function GET(
             },
           },
           orderBy: {
-            createdAt: 'desc',
+            createdAt: "desc",
           },
         },
         Like: {
@@ -57,35 +53,36 @@ export async function GET(
           },
         },
       },
-    })
+    });
 
     if (!post) {
-      return NextResponse.json({ message: 'Post not found' }, { status: 404 })
+      return NextResponse.json({ message: "Post not found" }, { status: 404 });
     }
 
-    return NextResponse.json(post)
+    return NextResponse.json(post);
   } catch (error) {
-    console.error('Error fetching post:', error)
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 })
+    console.error("Error fetching post:", error);
+    return NextResponse.json(
+      { message: "Internal server error" },
+      { status: 500 }
+    );
   } finally {
-    await prisma.$disconnect()
+    await prisma.$disconnect();
   }
 }
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: { slug: string } }
-) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function PATCH(request: Request, context: { params: any }) {
   try {
-    const { slug } = await params;
+    const { slug } = context.params;
     const session = await getServerSession(authOptions);
 
     if (!slug) {
-      return NextResponse.json({ message: 'Invalid slug' }, { status: 400 });
+      return NextResponse.json({ message: "Invalid slug" }, { status: 400 });
     }
 
     if (!session || !session.user?.id) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     const post = await prisma.post.findUnique({
@@ -96,18 +93,19 @@ export async function PATCH(
     });
 
     if (!post) {
-      return NextResponse.json({ message: 'Post not found' }, { status: 404 });
+      return NextResponse.json({ message: "Post not found" }, { status: 404 });
     }
 
     if (post.User.id !== session.user.id) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+      return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
     }
 
-    const { title, content, imageUrl, categoryIds, tagIds } = await request.json();
+    const { title, content, imageUrl, categoryIds, tagIds } =
+      await request.json();
 
     if (!title || !content) {
       return NextResponse.json(
-        { message: 'Title and content are required' },
+        { message: "Title and content are required" },
         { status: 400 }
       );
     }
@@ -120,12 +118,16 @@ export async function PATCH(
         content,
         imageUrl,
         updatedAt: new Date(),
-        Category: categoryIds ? {
-          set: categoryIds.map((id: string) => ({ id })),
-        } : undefined,
-        Tag: tagIds ? {
-          set: tagIds.map((id: string) => ({ id })),
-        } : undefined,
+        Category: categoryIds
+          ? {
+              set: categoryIds.map((id: string) => ({ id })),
+            }
+          : undefined,
+        Tag: tagIds
+          ? {
+              set: tagIds.map((id: string) => ({ id })),
+            }
+          : undefined,
       },
       include: {
         User: {
@@ -149,7 +151,7 @@ export async function PATCH(
             },
           },
           orderBy: {
-            createdAt: 'desc',
+            createdAt: "desc",
           },
         },
         Like: {
@@ -169,9 +171,9 @@ export async function PATCH(
 
     return NextResponse.json(updatedPost);
   } catch (error) {
-    console.error('Error updating post:', error);
+    console.error("Error updating post:", error);
     return NextResponse.json(
-      { message: 'Internal server error' },
+      { message: "Internal server error" },
       { status: 500 }
     );
   } finally {
@@ -179,23 +181,20 @@ export async function PATCH(
   }
 }
 
-
 //delete
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { slug: string } }
-) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function DELETE(request: Request, context: { params: any }) {
   try {
-    const { slug } = await params;
+    const { slug } = context.params;
     const session = await getServerSession(authOptions);
 
     if (!slug) {
-      return NextResponse.json({ message: 'Invalid slug' }, { status: 400 });
+      return NextResponse.json({ message: "Invalid slug" }, { status: 400 });
     }
 
     if (!session || !session.user?.id) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     const post = await prisma.post.findUnique({
@@ -206,22 +205,22 @@ export async function DELETE(
     });
 
     if (!post) {
-      return NextResponse.json({ message: 'Post not found' }, { status: 404 });
+      return NextResponse.json({ message: "Post not found" }, { status: 404 });
     }
 
     if (post.User.id !== session.user.id) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+      return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
     }
 
     await prisma.post.delete({
       where: { slug },
     });
 
-    return NextResponse.json({ message: 'Post deleted successfully' });
+    return NextResponse.json({ message: "Post deleted successfully" });
   } catch (error) {
-    console.error('Error deleting post:', error);
+    console.error("Error deleting post:", error);
     return NextResponse.json(
-      { message: 'Internal server error' },
+      { message: "Internal server error" },
       { status: 500 }
     );
   } finally {

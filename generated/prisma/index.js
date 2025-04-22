@@ -234,6 +234,10 @@ const config = {
         "fromEnvVar": null,
         "value": "windows",
         "native": true
+      },
+      {
+        "fromEnvVar": null,
+        "value": "rhel-openssl-3.0.x"
       }
     ],
     "previewFeatures": [],
@@ -251,16 +255,17 @@ const config = {
     "db"
   ],
   "activeProvider": "postgresql",
+  "postinstall": false,
   "inlineDatasources": {
     "db": {
       "url": {
         "fromEnvVar": "DATABASE_URL",
-        "value": "postgresql://examinadbadmin:Shehal1@22@examina-db.postgres.database.azure.com:5432/blog-app?schema=SCHEMA"
+        "value": null
       }
     }
   },
-  "inlineSchema": "generator client {\n  provider = \"prisma-client-js\"\n  output   = \"../generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel Account {\n  id                String  @id\n  userId            String\n  type              String\n  provider          String\n  providerAccountId String\n  refresh_token     String?\n  access_token      String?\n  expires_at        Int?\n  token_type        String?\n  scope             String?\n  id_token          String?\n  session_state     String?\n  User              User    @relation(fields: [userId], references: [id], onDelete: Cascade)\n\n  @@unique([provider, providerAccountId])\n}\n\nmodel Category {\n  id        String   @id\n  name      String   @unique\n  slug      String   @unique\n  createdAt DateTime @default(now())\n  updatedAt DateTime\n  Post      Post[]\n}\n\nmodel Comment {\n  id        String   @id\n  content   String\n  postId    String\n  authorId  String\n  createdAt DateTime @default(now())\n  updatedAt DateTime\n  User      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)\n  Post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)\n}\n\nmodel Like {\n  id        String   @id\n  postId    String\n  userId    String\n  createdAt DateTime @default(now())\n  Post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)\n  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)\n\n  @@unique([postId, userId])\n}\n\nmodel Post {\n  id        String      @id\n  title     String\n  slug      String      @unique\n  content   String\n  published Boolean     @default(false)\n  imageUrl  String?\n  authorId  String\n  createdAt DateTime    @default(now())\n  updatedAt DateTime\n  Comment   Comment[]\n  Like      Like[]\n  User      User        @relation(fields: [authorId], references: [id], onDelete: Cascade)\n  SavedPost SavedPost[]\n  Category  Category[]\n  Tag       Tag[]\n}\n\nmodel SavedPost {\n  id        String   @id\n  postId    String\n  userId    String\n  createdAt DateTime @default(now())\n  Post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)\n  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)\n\n  @@unique([postId, userId])\n}\n\nmodel Session {\n  id           String   @id\n  sessionToken String   @unique\n  userId       String\n  expires      DateTime\n  User         User     @relation(fields: [userId], references: [id], onDelete: Cascade)\n}\n\nmodel Tag {\n  id        String   @id\n  name      String   @unique\n  slug      String   @unique\n  createdAt DateTime @default(now())\n  updatedAt DateTime\n  Post      Post[]\n}\n\nmodel User {\n  id            String      @id\n  name          String?\n  email         String?     @unique\n  emailVerified DateTime?\n  image         String?\n  role          Role        @default(READER)\n  createdAt     DateTime    @default(now())\n  updatedAt     DateTime\n  Account       Account[]\n  Comment       Comment[]\n  Like          Like[]\n  Post          Post[]\n  SavedPost     SavedPost[]\n  Session       Session[]\n}\n\nmodel VerificationToken {\n  identifier String\n  token      String   @unique\n  expires    DateTime\n\n  @@unique([identifier, token])\n}\n\nenum Role {\n  ADMIN\n  EDITOR\n  READER\n}\n",
-  "inlineSchemaHash": "ed5a02c9d9502754a6e2db33a4795336cca7fe04f07c1c9a97125d86cee9bec1",
+  "inlineSchema": "generator client {\n  provider      = \"prisma-client-js\"\n  output        = \"../generated/prisma\"\n  binaryTargets = [\"native\", \"rhel-openssl-3.0.x\"]\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel Account {\n  id                String  @id\n  userId            String\n  type              String\n  provider          String\n  providerAccountId String\n  refresh_token     String?\n  access_token      String?\n  expires_at        Int?\n  token_type        String?\n  scope             String?\n  id_token          String?\n  session_state     String?\n  User              User    @relation(fields: [userId], references: [id], onDelete: Cascade)\n\n  @@unique([provider, providerAccountId])\n}\n\nmodel Category {\n  id        String   @id\n  name      String   @unique\n  slug      String   @unique\n  createdAt DateTime @default(now())\n  updatedAt DateTime\n  Post      Post[]\n}\n\nmodel Comment {\n  id        String   @id\n  content   String\n  postId    String\n  authorId  String\n  createdAt DateTime @default(now())\n  updatedAt DateTime\n  User      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)\n  Post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)\n}\n\nmodel Like {\n  id        String   @id\n  postId    String\n  userId    String\n  createdAt DateTime @default(now())\n  Post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)\n  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)\n\n  @@unique([postId, userId])\n}\n\nmodel Post {\n  id        String      @id\n  title     String\n  slug      String      @unique\n  content   String\n  published Boolean     @default(false)\n  imageUrl  String?\n  authorId  String\n  createdAt DateTime    @default(now())\n  updatedAt DateTime\n  Comment   Comment[]\n  Like      Like[]\n  User      User        @relation(fields: [authorId], references: [id], onDelete: Cascade)\n  SavedPost SavedPost[]\n  Category  Category[]\n  Tag       Tag[]\n}\n\nmodel SavedPost {\n  id        String   @id\n  postId    String\n  userId    String\n  createdAt DateTime @default(now())\n  Post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)\n  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)\n\n  @@unique([postId, userId])\n}\n\nmodel Session {\n  id           String   @id\n  sessionToken String   @unique\n  userId       String\n  expires      DateTime\n  User         User     @relation(fields: [userId], references: [id], onDelete: Cascade)\n}\n\nmodel Tag {\n  id        String   @id\n  name      String   @unique\n  slug      String   @unique\n  createdAt DateTime @default(now())\n  updatedAt DateTime\n  Post      Post[]\n}\n\nmodel User {\n  id            String      @id\n  name          String?\n  email         String?     @unique\n  emailVerified DateTime?\n  image         String?\n  role          Role        @default(READER)\n  createdAt     DateTime    @default(now())\n  updatedAt     DateTime\n  Account       Account[]\n  Comment       Comment[]\n  Like          Like[]\n  Post          Post[]\n  SavedPost     SavedPost[]\n  Session       Session[]\n}\n\nmodel VerificationToken {\n  identifier String\n  token      String   @unique\n  expires    DateTime\n\n  @@unique([identifier, token])\n}\n\nenum Role {\n  ADMIN\n  EDITOR\n  READER\n}\n",
+  "inlineSchemaHash": "a898b708074f0d0c76477b10a1d4b0b3e35358f621fb5c2ab89dac33619789f5",
   "copyEngine": true
 }
 
@@ -301,6 +306,10 @@ Object.assign(exports, Prisma)
 // file annotations for bundling tools to include these files
 path.join(__dirname, "query_engine-windows.dll.node");
 path.join(process.cwd(), "generated/prisma/query_engine-windows.dll.node")
+
+// file annotations for bundling tools to include these files
+path.join(__dirname, "libquery_engine-rhel-openssl-3.0.x.so.node");
+path.join(process.cwd(), "generated/prisma/libquery_engine-rhel-openssl-3.0.x.so.node")
 // file annotations for bundling tools to include these files
 path.join(__dirname, "schema.prisma");
 path.join(process.cwd(), "generated/prisma/schema.prisma")

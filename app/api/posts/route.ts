@@ -1,11 +1,8 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@/generated/prisma";
+import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import crypto from "crypto";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-
-
-const prisma = new PrismaClient();
+import { authOptions } from "@/lib/auth";
 
 export async function GET() {
   try {
