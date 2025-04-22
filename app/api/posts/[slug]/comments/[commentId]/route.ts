@@ -59,12 +59,10 @@ export async function PATCH(
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  context: { params: { [key: string]: string | string[] } }
-) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function DELETE(request: NextRequest, context: { params: any}) {
   try {
-    const { slug, commentId } = context.params as { slug: string; commentId: string };
+    const { slug, commentId } = context.params;
     const session = await getServerSession(authOptions);
 
     if (!slug || !commentId) {
