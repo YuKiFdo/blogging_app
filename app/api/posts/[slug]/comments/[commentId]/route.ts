@@ -6,43 +6,31 @@ import type { NextRequest } from "next/server";
 
 const prisma = new PrismaClient();
 
-interface Context {
-  params: {
-    slug: string;
-    commentId: string;
-  };
-}
-
 export async function PATCH(
-  req: NextRequest,
-  { params }: Context
+  request: NextRequest,
+  { params }: { params: { slug: string; commentId: string } }
 ) {
-  const session = await getServerSession(authOptions);
-  const { slug, commentId } = params;
-
-  if (!slug || !commentId) {
-    return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
-  }
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const post = await prisma.post.findUnique({ where: { id: slug } });
-  if (!post) {
-    return NextResponse.json({ error: "Post not found" }, { status: 404 });
-  }
-
-  const existingComment = await prisma.comment.findUnique({ 
-    where: { id: commentId } 
-  });
-  
-  if (!existingComment) {
-    return NextResponse.json({ error: "Comment not found" }, { status: 404 });
-  }
-
   try {
-    const { content } = await req.json();
+    const session = await getServerSession(authOptions);
+    const { slug, commentId } = params;
+
+    if (!slug || !commentId) {
+      return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
+    }
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const [post, existingComment] = await Promise.all([
+      prisma.post.findUnique({ where: { id: slug } }),
+      prisma.comment.findUnique({ where: { id: commentId } })
+    ]);
+
+    if (!post) return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    if (!existingComment) return NextResponse.json({ error: "Comment not found" }, { status: 404 });
+
+    const { content } = await request.json();
     if (!content) {
       return NextResponse.json({ error: "Content required" }, { status: 400 });
     }
@@ -72,44 +60,38 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  req: NextRequest,
-  { params }: Context
+  request: NextRequest,
+  { params }: { params: { slug: string; commentId: string } }
 ) {
-  const { slug, commentId } = params;
-  const session = await getServerSession(authOptions);
-
-  if (!slug || !commentId) {
-    return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
-  }
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
+    const { slug, commentId } = params;
+    const session = await getServerSession(authOptions);
+
+    if (!slug || !commentId) {
+      return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
+    }
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const [post, comment] = await Promise.all([
       prisma.post.findUnique({ where: { id: slug } }),
       prisma.comment.findUnique({ where: { id: commentId } })
     ]);
 
-    if (!post) {
-      return NextResponse.json({ error: "Post not found" }, { status: 404 });
-    }
-
-    if (!comment) {
-      return NextResponse.json({ error: "Comment not found" }, { status: 404 });
-    }
+    if (!post) return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    if (!comment) return NextResponse.json({ error: "Comment not found" }, { status: 404 });
 
     await prisma.comment.delete({ where: { id: commentId } });
 
     return NextResponse.json(
-      { message: "Comment deleted successfully" },
-      { status: 200 }
+      { message: "Comment deleted successfully" }
     );
   } catch (error) {
     console.error("Error deleting comment:", error);
     return NextResponse.json(
-      { error: "Internal Server Error"  },
+      { error: "Internal Server Error" },
       { status: 500 }
     );
   }
