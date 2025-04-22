@@ -6,9 +6,16 @@ import type { NextRequest } from "next/server";
 
 const prisma = new PrismaClient();
 
+type RouteParams = {
+  params: {
+    slug: string;
+    commentId: string;
+  };
+};
+
 export async function PATCH(
   req: NextRequest,
-  context: { params: { slug: string; commentId: string } }
+  context: RouteParams
 ) {
   const session = await getServerSession(authOptions);
   const { slug, commentId } = context.params;
@@ -55,7 +62,7 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  context: { params: { slug: string; commentId: string } }
+  context: RouteParams
 ) {
   const { slug, commentId } = context.params;
   const session = await getServerSession(authOptions);
