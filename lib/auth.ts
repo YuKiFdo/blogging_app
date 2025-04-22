@@ -3,7 +3,7 @@ import GoogleProvider from "next-auth/providers/google"
 import { PrismaClient } from "@/generated/prisma"
 import { NextAuthOptions } from "next-auth"
 import { JWT } from "next-auth/jwt"
-import { User } from "next-auth"
+import { User, Session } from "next-auth"
 import { DefaultSession } from "next-auth"
 
 
@@ -53,7 +53,7 @@ export const authOptions: NextAuthOptions = {
         strategy: "jwt",
     },
     callbacks: {
-        async signIn({ user }) {
+        async signIn({ user }: { user: User }) {
             const existingUser = await prisma.user.findUnique({
                 where: { email: user.email! },
             })
@@ -73,14 +73,14 @@ export const authOptions: NextAuthOptions = {
             return true
         },
 
-        async jwt({ token, user }) {
+        async jwt({ token, user }: { token: JWT, user: User | undefined }) {
             if (user) {
                 token.role = user.role || "READER"
             }
             return token
         },
 
-        async session({ session, token }) {
+        async session({ session, token }: { session: Session; token: JWT , user: User | undefined}) {
             const dbUser = await prisma.user.findUnique({
                 where: { id: token.sub! },
             })
