@@ -6,13 +6,14 @@ import type { NextRequest } from "next/server";
 
 const prisma = new PrismaClient();
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { slug: string; commentId: string } }
+  context: { params: any}
 ) {
   try {
     const session = await getServerSession(authOptions);
-    const { slug, commentId } = params;
+    const { slug, commentId } = context.params;
 
     if (!slug || !commentId) {
       return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
