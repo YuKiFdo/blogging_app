@@ -6,15 +6,11 @@ import crypto from "crypto";
 
 const prisma = new PrismaClient();
 
-export async function POST(
-  req: Request,
-  { params }: { params: { slug: string } }
-) {
- 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function POST(req: Request, context: { params: any }) {
   const session = await getServerSession(authOptions);
 
-  const resolvedParams = await Promise.resolve(params);
-  const slug = resolvedParams.slug;
+  const slug = context.params.slug as string;
 
   if (!slug) {
     return NextResponse.json({ error: "Invalid slug" }, { status: 400 });
