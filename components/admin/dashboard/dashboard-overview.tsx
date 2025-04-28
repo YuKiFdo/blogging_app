@@ -218,9 +218,10 @@ const DashboardOverview = () => {
                 {topPosts.mostLiked.title}
               </h4>
 
-              <p className="text-gray-600 dark:text-gray-300 mb-3 text-sm line-clamp-2">
-                {topPosts.mostLiked.excerpt}
-              </p>
+              <p
+                className="prose max-w-none dark:prose-dark"
+                dangerouslySetInnerHTML={{ __html: topPosts.mostLiked.excerpt }}
+              />
 
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-2">
@@ -299,9 +300,10 @@ const DashboardOverview = () => {
                 {topPosts.mostCommented.title}
               </h4>
 
-              <p className="text-gray-600 dark:text-gray-300 mb-3 text-sm line-clamp-2">
-                {topPosts.mostCommented.excerpt}
-              </p>
+              <p
+                className="prose max-w-none dark:prose-dark"
+                dangerouslySetInnerHTML={{ __html: topPosts.mostCommented.excerpt }}
+              />
 
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-2">
