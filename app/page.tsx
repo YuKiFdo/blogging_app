@@ -42,8 +42,10 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const { data: session } = useSession();
   const userRole = session?.user?.role;
-  const [selectedCategory, setSelectedCategory] = useState<string | null>('all');
-  const [selectedTag, setSelectedTag] = useState<string | null>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(
+    "all"
+  );
+  const [selectedTag, setSelectedTag] = useState<string | null>("all");
   const [searchAuthor, setSearchAuthor] = useState<string>("");
   const [authorSuggestions, setAuthorSuggestions] = useState<
     { name: string; image?: string | null }[]
@@ -89,7 +91,12 @@ export default function Home() {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch("/api/posts");
+      const response = await fetch("/api/posts?isPublished=true", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
       const data = await response.json();
 
       if (response.ok) {
@@ -128,43 +135,45 @@ export default function Home() {
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between w-full">
           <div className="flex flex-wrap gap-4">
             <div className="flex gap-4 w-full sm:w-auto">
-            <Select
-              value={selectedCategory || ""}
-              onValueChange={(value) => setSelectedCategory(value)}
-            >
-              <SelectTrigger className="md:w-[180px] w-full">
-                <SelectValue placeholder="Filter by Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {[...new Set(blogs.flatMap((b) => b.Category.map((c) => c.name)))].map(
-                  (name) => (
+              <Select
+                value={selectedCategory || ""}
+                onValueChange={(value) => setSelectedCategory(value)}
+              >
+                <SelectTrigger className="md:w-[180px] w-full">
+                  <SelectValue placeholder="Filter by Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {[
+                    ...new Set(
+                      blogs.flatMap((b) => b.Category.map((c) => c.name))
+                    ),
+                  ].map((name) => (
                     <SelectItem key={name} value={name}>
                       {name}
                     </SelectItem>
-                  )
-                )}
-              </SelectContent>
-            </Select>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            <Select
-              value={selectedTag || ""}
-              onValueChange={(value) => setSelectedTag(value)}
-            >
-              <SelectTrigger className="md:w-[180px] w-full">
-                <SelectValue placeholder="Filter by Tag" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Tags</SelectItem>
-                {[...new Set(blogs.flatMap((b) => b.Tag.map((t) => t.name)))].map(
-                  (name) => (
+              <Select
+                value={selectedTag || ""}
+                onValueChange={(value) => setSelectedTag(value)}
+              >
+                <SelectTrigger className="md:w-[180px] w-full">
+                  <SelectValue placeholder="Filter by Tag" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Tags</SelectItem>
+                  {[
+                    ...new Set(blogs.flatMap((b) => b.Tag.map((t) => t.name))),
+                  ].map((name) => (
                     <SelectItem key={name} value={name}>
                       {name}
                     </SelectItem>
-                  )
-                )}
-              </SelectContent>
-            </Select>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="relative w-full md:w-[180px]">
@@ -216,9 +225,11 @@ export default function Home() {
               )}
             </div>
 
-            {(selectedCategory !=='all' || selectedTag !=='all' || searchAuthor) && (
+            {(selectedCategory !== "all" ||
+              selectedTag !== "all" ||
+              searchAuthor) && (
               <Button
-              className="w-full sm:w-auto"
+                className="w-full sm:w-auto"
                 variant="outline"
                 onClick={() => {
                   setSelectedCategory("all");
@@ -240,7 +251,9 @@ export default function Home() {
               date={new Date(blog.createdAt).toLocaleDateString()}
               title={blog.title}
               image={blog.imageUrl}
-              category={blog.Category.map((category) => category.name).join(", ")}
+              category={blog.Category.map((category) => category.name).join(
+                ", "
+              )}
               tags={blog.Tag.map((tag) => tag.name).join(", ")}
               excerpt={blog.content.substring(0, 100) + "..."}
               author={blog.User.name}
