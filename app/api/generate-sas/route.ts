@@ -1,7 +1,6 @@
-// app/api/generate-sas/route.ts
 import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
-import {  StorageSharedKeyCredential, BlobSASPermissions, generateBlobSASQueryParameters, SASProtocol } from "@azure/storage-blob";
+import { StorageSharedKeyCredential, BlobSASPermissions, generateBlobSASQueryParameters, SASProtocol } from "@azure/storage-blob";
 import { nanoid } from "nanoid";
 import { NextResponse } from "next/server";
 
@@ -28,10 +27,16 @@ export async function POST(request: Request) {
         const sasToken = generateUploadSasToken(accountName, accountKey, containerName, blobName);
         const uploadUrl = `https://${accountName}.blob.core.windows.net/${containerName}/${blobName}?${sasToken}`;
         
+        const readSasToken = generateReadSasToken(accountName, accountKey, containerName, blobName);
+        const readUrl = `https://${accountName}.blob.core.windows.net/${containerName}/${blobName}?${readSasToken}`;
+        
+        console.log(`Upload URL: ${uploadUrl}`);
+        console.log(`Read URL: ${readUrl}`);
+
         return NextResponse.json({
             uploadUrl,
             blobName,
-            readUrl: `https://${accountName}.blob.core.windows.net/${containerName}/${blobName}?${generateReadSasToken(accountName, accountKey, containerName, blobName)}`
+            readUrl
         });
     } catch (error) {
         console.error("Error generating SAS token:", error);
