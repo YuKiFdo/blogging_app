@@ -4,13 +4,24 @@ import { getServerSession } from "next-auth";
 import crypto from "crypto";
 import { authOptions } from "@/lib/auth";
 
-export async function GET() {
+export async function GET(request: Request) {
+
   try {
+
+    const url = new URL(request.url);
+    const isPublished = url.searchParams.get("isPublished");
+    const authorId = url.searchParams.get("authorId");
+    const publishedfILTER = isPublished === "true" ? true : isPublished === "false" ? false : undefined;
     const posts = await prisma.post.findMany({
+      where: {
+        published: publishedfILTER,
+        ...(authorId && { authorId }),
+      },
+
       include: {
-        User: true,      
-        Category: true, 
-        Tag: true,       
+        User: true,
+        Category: true,
+        Tag: true,
       },
     });
     return NextResponse.json({ posts });
@@ -22,16 +33,6 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const { title, content, imageUrl, slug, categoryId, tagIds, isPublished } = await request.json();
-
-  console.log("Received data:", {
-    title,
-    content,
-    imageUrl,
-    slug,
-    categoryId,
-    tagIds,
-    isPublished,
-  });
 
   const session = await getServerSession(authOptions);
 
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
   const existingPost = await prisma.post.findUnique({ where: { slug } });
   if (existingPost) {
     return NextResponse.json({ error: "Slug already exists" }, { status: 400 });
-  } 
+  }
 
   try {
     const newPost = await prisma.post.create({
@@ -62,7 +63,7 @@ export async function POST(request: Request) {
         Tag: { connect: tagIds.map((id: string) => ({ id })) },
         updatedAt: new Date(),
         published: isPublished || false,
-        
+
       },
     });
     return NextResponse.json(newPost, { status: 201 });
