@@ -17,30 +17,35 @@ export async function POST(request: Request) {
     const containerName = process.env.AZURE_STORAGE_CONTAINER_NAME;
 
     if (!accountName || !accountKey || !containerName) {
+        console.error("Missing Azure Storage configuration: ", { accountName, accountKey, containerName });
         return NextResponse.json({ error: "Missing Azure Storage configuration" }, { status: 500 });
     }
 
-    // Generate a unique blob name
     const blobName = `${nanoid()}-${fileName}`;
-    
+
     try {
-        const sasToken = generateUploadSasToken(accountName, accountKey, containerName, blobName);
-        const uploadUrl = `https://${accountName}.blob.core.windows.net/${containerName}/${blobName}?${sasToken}`;
-        
+        const uploadSasToken = generateUploadSasToken(accountName, accountKey, containerName, blobName);
+        const uploadUrl = `https://${accountName}.blob.core.windows.net/${containerName}/${blobName}?${uploadSasToken}`;
+
         const readSasToken = generateReadSasToken(accountName, accountKey, containerName, blobName);
         const readUrl = `https://${accountName}.blob.core.windows.net/${containerName}/${blobName}?${readSasToken}`;
-        
-        console.log(`Upload URL: ${uploadUrl}`);
-        console.log(`Read URL: ${readUrl}`);
 
         return NextResponse.json({
             uploadUrl,
             blobName,
             readUrl
         });
-    } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
         console.error("Error generating SAS token:", error);
-        return NextResponse.json({ error: "Failed to generate upload URL" }, { status: 500 });
+        if (error instanceof Error) {
+            console.error("Error generating SAS token:", error.message);
+        } else if (error instanceof StorageSharedKeyCredential) {
+            console.error("StorageSharedKeyCredential error:", error);
+        } else if (error instanceof BlobSASPermissions) {
+            console.error("BlobSASPermissions error:", error);
+        }
+        return NextResponse.json({ error: `Failed to generate upload URL: ${error.message}` }, { status: 500 });
     }
 }
 
@@ -50,9 +55,9 @@ function generateUploadSasToken(accountName: string, accountKey: string, contain
     const sasToken = generateBlobSASQueryParameters({
         containerName,
         blobName,
-        permissions: BlobSASPermissions.parse("cw"), // create and write permissions
+        permissions: BlobSASPermissions.parse("cw"), // Create and Write permissions
         startsOn: new Date(),
-        expiresOn: new Date(new Date().valueOf() + 15 * 60 * 1000), // 15 minutes from now
+        expiresOn: new Date(new Date().valueOf() + 15 * 60 * 1000), // 15 minutes expiration time
         protocol: SASProtocol.Https,
     }, sharedKeyCredential).toString();
 
@@ -65,9 +70,9 @@ function generateReadSasToken(accountName: string, accountKey: string, container
     const sasToken = generateBlobSASQueryParameters({
         containerName,
         blobName,
-        permissions: BlobSASPermissions.parse("r"), // read permission
+        permissions: BlobSASPermissions.parse("r"), // Read permission
         startsOn: new Date(),
-        expiresOn: new Date(new Date().valueOf() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+        expiresOn: new Date(new Date().valueOf() + 30 * 24 * 60 * 60 * 1000), // 30 days expiration time
         protocol: SASProtocol.Https,
     }, sharedKeyCredential).toString();
 
