@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { User, Settings, LogOut, ChevronDown } from 'lucide-react';
+import { User, Settings, LogOut, ChevronDown, Airplay } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -76,6 +76,16 @@ export function ProfileDropdown() {
               Settings
             </Link>
           </DropdownMenuItem>
+
+          {session.user?.role === 'ADMIN' && (
+            <DropdownMenuItem asChild>
+              <Link href="/admin" className="flex items-center hover:bg-gray-100">
+                <Airplay className="mr-2 h-4 w-4" />
+                Go to Dashboard
+              </Link>
+            </DropdownMenuItem>
+          )}
+
           <DropdownMenuItem
             onClick={() => signOut()}
             className="flex items-center text-red-600 hover:bg-red-50"
@@ -87,4 +97,4 @@ export function ProfileDropdown() {
       </DropdownMenu>
     </div>
   );
-} 
+}
