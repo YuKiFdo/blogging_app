@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 
 export async function PUT(req: NextRequest) {
   const session = await getServerSession(authOptions);
+  const { role } = await req.json();
 
   if (!session || !(session).user?.role) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -15,9 +16,10 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { role } = await req.json();
-
   const id = req.nextUrl.pathname.split("/").pop();
+
+  console.log("ID", id);
+  console.log("Role", role);
 
   if (!id) {
     return NextResponse.json({ error: "Missing user ID" }, { status: 400 });

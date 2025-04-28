@@ -122,3 +122,47 @@
     @apply bg-background text-foreground transition-colors duration-200;
   }
 }
+
+@layer components {
+  /* Dark mode variants for sidebar */
+  .sidebar {
+    @apply bg-sidebar text-sidebar-foreground border-sidebar-border;
+  }
+  .sidebar-primary {
+    @apply bg-sidebar-primary text-sidebar-primary-foreground;
+  }
+  .sidebar-accent {
+    @apply bg-sidebar-accent text-sidebar-accent-foreground;
+  }
+
+  /* Dark mode variants for cards */
+  .card {
+    @apply bg-card text-card-foreground;
+  }
+
+  /* Dark mode variants for inputs */
+  .input {
+    @apply bg-input border-border;
+  }
+
+  /* Dark mode variants for buttons */
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90;
+  }
+  .btn-secondary {
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80;
+  }
+
+  /* Dark mode variants for dropdowns */
+  .dropdown-content {
+    @apply bg-popover text-popover-foreground border-border;
+  }
+  .dropdown-item {
+    @apply hover:bg-accent hover:text-accent-foreground;
+  }
+
+  /* Dark mode variants for sheets (mobile menu) */
+  .sheet-content {
+    @apply bg-sidebar text-sidebar-foreground;
+  }
+}

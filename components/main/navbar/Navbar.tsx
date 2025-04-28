@@ -14,7 +14,7 @@ export function Navbar() {
   const [darkMode, setDarkMode] = useState(false);
 
   const toggleTheme = () => {
-    setDarkMode(prev => {
+    setDarkMode((prev) => {
       const newDarkMode = !prev;
       if (newDarkMode) {
         document.documentElement.classList.add('dark');
@@ -26,6 +26,8 @@ export function Navbar() {
       return newDarkMode;
     });
   };
+
+  const isEditorOrAdmin = session?.user?.role === 'EDITOR' || session?.user?.role === 'ADMIN';
 
   return (
     <nav className="sticky top-0 z-50 bg-white/60 dark:bg-gray-900/60 backdrop-blur-md shadow-sm dark:text-white border-b">
@@ -67,8 +69,12 @@ export function Navbar() {
           </div>
 
           <div className="hidden md:flex items-center gap-4">
-            <Link href="/blogs" className="text-sm font-medium hover:text-gray-900 dark:hover:text-gray-300">
-              All Blogs
+            {/* Show My Blogs if the user is an editor or admin */}
+            <Link
+              href={isEditorOrAdmin ? "/my-blogs" : "/blogs"}
+              className="text-sm font-medium hover:text-gray-900 dark:hover:text-gray-300"
+            >
+              {isEditorOrAdmin ? "My Blogs" : "All Blogs"}
             </Link>
 
             <div className="flex items-center space-x-2">
@@ -98,19 +104,20 @@ export function Navbar() {
 
         <div className={`md:hidden ${isOpen ? 'block' : 'hidden'} transition-all duration-300 ease-in-out`}>
           <div className="py-4 space-y-2">
+            {/* Show My Blogs if the user is an editor or admin */}
             <Link
-              href="/blogs"
+              href={isEditorOrAdmin ? "/my-blogs" : "/blogs"}
               className="block px-3 py-2 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md"
             >
-              All Blogs
+              {isEditorOrAdmin ? "My Blogs" : "All Blogs"}
             </Link>
 
             {!session && (
               <Button asChild className="w-full">
-              <Link href="/auth/login">
-                Sign In
-              </Link>
-            </Button>
+                <Link href="/auth/login">
+                  Sign In
+                </Link>
+              </Button>
             )}
           </div>
         </div>

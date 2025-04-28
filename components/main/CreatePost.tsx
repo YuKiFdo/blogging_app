@@ -11,7 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import RichTextEditor from "../posts/RichTextEditor";
 import { PlusCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -23,8 +22,9 @@ import {
   SelectValue,
   SelectGroup,
   SelectLabel,
-
 } from "@/components/ui/select";
+import { AzureUpload } from "./AzureUpload";
+
 interface Category {
   id: string;
   name: string;
@@ -48,7 +48,6 @@ export function CreatePostDialog({ onPostCreated }: CreatePostDialogProps) {
     category: "",
     tags: [] as string[],
     imageUrl: "",
-    isPublished: false,
   });
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -135,6 +134,14 @@ export function CreatePostDialog({ onPostCreated }: CreatePostDialogProps) {
     });
   };
 
+  const handleRemoveImage = () => {
+    setFormData((prevData) => ({
+      ...prevData,
+      imageUrl: "",
+      imagePublicId: "",
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormSubmitting(true);
@@ -152,7 +159,6 @@ export function CreatePostDialog({ onPostCreated }: CreatePostDialogProps) {
           categoryId: formData.category,
           tagIds: formData.tags,
           imageUrl: formData.imageUrl || null,
-          published: formData.isPublished,
         }),
       });
 
@@ -166,7 +172,6 @@ export function CreatePostDialog({ onPostCreated }: CreatePostDialogProps) {
           category: "",
           tags: [],
           imageUrl: "",
-          isPublished: false,
         });
         setSlugManuallyEdited(false);
         setOpen(false);
@@ -174,10 +179,44 @@ export function CreatePostDialog({ onPostCreated }: CreatePostDialogProps) {
         onPostCreated?.();
       } else {
         toast.error(data.error || "Failed to create post");
+        const deleteResponse = await fetch("/api/upload", {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            fileName: formData.imageUrl.split("/").pop(),
+          }),
+        });
+        if (!deleteResponse.ok) {
+          console.error("Failed to delete image:", await deleteResponse.json());
+        }
+        setFormData((prevData) => ({
+          ...prevData,
+          imageUrl: "",
+        }));
+        setSlugManuallyEdited(false);
       }
     } catch (err) {
       console.error("Error creating post:", err);
       toast.error("Something went wrong!");
+      const deleteResponse = await fetch("/api/upload", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fileName: formData.imageUrl.split("/").pop(),
+        }),
+      });
+      if (!deleteResponse.ok) {
+        console.error("Failed to delete image:", await deleteResponse.json());
+      }
+      setFormData((prevData) => ({
+        ...prevData,
+        imageUrl: "",
+      }));
+      setSlugManuallyEdited(false);
     } finally {
       setFormSubmitting(false);
     }
@@ -191,7 +230,6 @@ export function CreatePostDialog({ onPostCreated }: CreatePostDialogProps) {
       category: "",
       tags: [],
       imageUrl: "",
-      isPublished: false,
     });
     setSlugManuallyEdited(false);
   };
@@ -211,7 +249,7 @@ export function CreatePostDialog({ onPostCreated }: CreatePostDialogProps) {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-xl md:max-w-3xl lg:max-w-4xl w-full">
+      <DialogContent className="max-w-[95vw] sm:max-w-3xl p-4 sm:p-6 flex flex-col max-h-[80vh]">
         <DialogHeader>
           <DialogTitle>Create New Blog Post</DialogTitle>
         </DialogHeader>
@@ -219,12 +257,13 @@ export function CreatePostDialog({ onPostCreated }: CreatePostDialogProps) {
         {isLoading ? (
           <div className="flex justify-center items-center py-8">
             <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
-            <span className="ml-2 text-gray-500">
-              Getting Info ...
-            </span>
+            <span className="ml-2 text-gray-500">Getting Info ...</span>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form
+            onSubmit={handleSubmit}
+            className="flex-1 overflow-y-auto space-y-4"
+          >
             <div className="space-y-2">
               <Label htmlFor="title">Title</Label>
               <Input
@@ -310,44 +349,33 @@ export function CreatePostDialog({ onPostCreated }: CreatePostDialogProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="imageUrl">Image URL (optional)</Label>
-              <Input
-                id="imageUrl"
-                name="imageUrl"
-                value={formData.imageUrl}
-                onChange={handleChange}
-                placeholder="Enter image URL"
+              <Label>Image</Label>
+              <AzureUpload
+                onImageUpload={(url) =>
+                  setFormData({
+                    ...formData,
+                    imageUrl: url,
+                  })
+                }
+                currentImageUrl={formData.imageUrl}
+                onRemoveImage={handleRemoveImage}
               />
             </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="publishNow"
-                  checked={formData.isPublished}
-                  onCheckedChange={(checked) =>
-                    setFormData({ ...formData, isPublished: !!checked })
-                  }
-                />
-                <Label htmlFor="publishNow">Publish Now?</Label>
-              </div>
-            </div>
-
-            <DialogFooter className="mt-6">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setOpen(false)}
-                disabled={formSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={formSubmitting}>
-                {formSubmitting ? "Creating..." : "Create Post"}
-              </Button>
-            </DialogFooter>
           </form>
         )}
+        <DialogFooter className="flex justify-end p-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setOpen(false)}
+            disabled={formSubmitting}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" disabled={formSubmitting}>
+            {formSubmitting ? "Creating..." : "Create Post"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
