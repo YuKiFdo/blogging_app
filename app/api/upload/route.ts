@@ -38,6 +38,7 @@ export async function POST(request: Request) {
             url: imageUrl,
             fileName: blobName
         });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any 
     } catch (error: any) {
         if (error instanceof Error) {
             console.error("Error uploading to Azure Blob Storage:", error.message);
