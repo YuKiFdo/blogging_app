@@ -22,16 +22,13 @@ export async function POST(request: Request) {
     }
 
     const blobName = `${nanoid()}-${fileName}`;
-    console.log(`Generated blob name: ${blobName}`);
 
     try {
         const uploadSasToken = generateUploadSasToken(accountName, accountKey, containerName, blobName);
         const uploadUrl = `https://${accountName}.blob.core.windows.net/${containerName}/${blobName}?${uploadSasToken}`;
-        console.log(`Generated upload URL: ${uploadUrl}`);
 
         const readSasToken = generateReadSasToken(accountName, accountKey, containerName, blobName);
         const readUrl = `https://${accountName}.blob.core.windows.net/${containerName}/${blobName}?${readSasToken}`;
-        console.log(`Generated read URL: ${readUrl}`);
 
         return NextResponse.json({
             uploadUrl,
@@ -47,21 +44,13 @@ export async function POST(request: Request) {
             console.error("StorageSharedKeyCredential error:", error);
         } else if (error instanceof BlobSASPermissions) {
             console.error("BlobSASPermissions error:", error);
-        } 
+        }
         return NextResponse.json({ error: `Failed to generate upload URL: ${error.message}` }, { status: 500 });
     }
 }
 
 function generateUploadSasToken(accountName: string, accountKey: string, containerName: string, blobName: string) {
     const sharedKeyCredential = new StorageSharedKeyCredential(accountName, accountKey);
-
-    console.log(`Generating upload SAS Token with: `, {
-        accountName,
-        containerName,
-        blobName,
-        permissions: "cw",
-        expiresOn: new Date(new Date().valueOf() + 15 * 60 * 1000), // 15 minutes expiration time
-    });
 
     const sasToken = generateBlobSASQueryParameters({
         containerName,
@@ -72,20 +61,11 @@ function generateUploadSasToken(accountName: string, accountKey: string, contain
         protocol: SASProtocol.Https,
     }, sharedKeyCredential).toString();
 
-    console.log("Generated SAS upload token: ", sasToken);
     return sasToken;
 }
 
 function generateReadSasToken(accountName: string, accountKey: string, containerName: string, blobName: string) {
     const sharedKeyCredential = new StorageSharedKeyCredential(accountName, accountKey);
-
-    console.log(`Generating read SAS Token with: `, {
-        accountName,
-        containerName,
-        blobName,
-        permissions: "r",
-        expiresOn: new Date(new Date().valueOf() + 30 * 24 * 60 * 60 * 1000), // 30 days expiration time
-    });
 
     const sasToken = generateBlobSASQueryParameters({
         containerName,
@@ -96,6 +76,5 @@ function generateReadSasToken(accountName: string, accountKey: string, container
         protocol: SASProtocol.Https,
     }, sharedKeyCredential).toString();
 
-    console.log("Generated SAS read token: ", sasToken);
     return sasToken;
 }
