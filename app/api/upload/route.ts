@@ -59,6 +59,7 @@ export async function POST(request: Request) {
 
 }
 
+
 export async function DELETE(request: Request) {
     const { fileName } = await request.json();
     const session = await getServerSession(authOptions);
