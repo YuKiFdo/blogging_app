@@ -5,6 +5,7 @@ export async function middleware(req: NextRequest) {
     const token = await getToken({ req });
     const path = req.nextUrl.pathname;
     const referer = req.headers.get("referer");
+    console.log("Token:", token);
 
     if (token && path === "/auth/login") {
         return NextResponse.redirect(new URL("/", req.url));
@@ -19,8 +20,7 @@ export async function middleware(req: NextRequest) {
     }
 
     if (path.startsWith("/admin") && token?.role !== "ADMIN") {
-        const redirectUrl = referer ? new URL(referer) : new URL("/unauthorized", req.url);
-        redirectUrl.searchParams.set("error", "no-access");
+        const redirectUrl = new URL("/unauthorized", req.url);
         return NextResponse.redirect(redirectUrl);
     }
 

@@ -70,9 +70,14 @@ export const authOptions: NextAuthOptions = {
             return true
         },
 
-        async jwt({ token, user }: { token: JWT, user: User | undefined }) {
-            if (user) {
-                token.role = user.role || "READER"
+        async jwt({ token }: { token: JWT }) {
+            const dbUser = await prisma.user.findUnique({
+                where: { id: token.sub! },
+            })
+            if (dbUser) {
+                token.role = dbUser.role || "READER"
+            } else {
+                token.role = "READER"
             }
             return token
         },
