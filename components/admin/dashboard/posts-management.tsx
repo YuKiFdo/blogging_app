@@ -258,7 +258,7 @@ const PostsManagement = () => {
 
       {/* Post Details Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="min-w-3xl max-h-[90vh] overflow-y-auto dark:bg-gray-800">
+        <DialogContent className="md:min-w-3xl max-w-3xl max-h-[90vh] overflow-y-auto dark:bg-gray-800">
           <DialogHeader>
             <DialogTitle className="text-gray-900 dark:text-gray-100">
               {selectedPost?.title}

@@ -41,7 +41,6 @@ export async function POST(request: Request) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
         console.error("Error generating SAS token:", error);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if (error instanceof Error) {
             console.error("Error generating SAS token:", error.message);
         } else if (error instanceof StorageSharedKeyCredential) {
