@@ -179,6 +179,30 @@ export function CreatePostDialog({ onPostCreated }: CreatePostDialogProps) {
         onPostCreated?.();
       } else {
         toast.error(data.error || "Failed to create post");
+        if (formData.imageUrl) {
+          const deleteResponse = await fetch("/api/upload", {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              fileName: formData.imageUrl.split("/").pop(),
+            }),
+          });
+          if (!deleteResponse.ok) {
+            console.error("Failed to delete image:", await deleteResponse.json());
+          }
+          setFormData((prevData) => ({
+            ...prevData,
+            imageUrl: "",
+          }));
+        }
+        setSlugManuallyEdited(false);
+      }
+    } catch (err) {
+      console.error("Error creating post:", err);
+      toast.error("Something went wrong!");
+      if (formData.imageUrl) {
         const deleteResponse = await fetch("/api/upload", {
           method: "DELETE",
           headers: {
@@ -195,27 +219,7 @@ export function CreatePostDialog({ onPostCreated }: CreatePostDialogProps) {
           ...prevData,
           imageUrl: "",
         }));
-        setSlugManuallyEdited(false);
       }
-    } catch (err) {
-      console.error("Error creating post:", err);
-      toast.error("Something went wrong!");
-      const deleteResponse = await fetch("/api/upload", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          fileName: formData.imageUrl.split("/").pop(),
-        }),
-      });
-      if (!deleteResponse.ok) {
-        console.error("Failed to delete image:", await deleteResponse.json());
-      }
-      setFormData((prevData) => ({
-        ...prevData,
-        imageUrl: "",
-      }));
       setSlugManuallyEdited(false);
     } finally {
       setFormSubmitting(false);
@@ -261,6 +265,7 @@ export function CreatePostDialog({ onPostCreated }: CreatePostDialogProps) {
           </div>
         ) : (
           <form
+            id="create-post-form"
             onSubmit={handleSubmit}
             className="flex-1 overflow-y-auto space-y-4"
           >
@@ -372,7 +377,11 @@ export function CreatePostDialog({ onPostCreated }: CreatePostDialogProps) {
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={formSubmitting}>
+          <Button 
+            type="submit" 
+            form="create-post-form"
+            disabled={formSubmitting || isLoading}
+          >
             {formSubmitting ? "Creating..." : "Create Post"}
           </Button>
         </DialogFooter>

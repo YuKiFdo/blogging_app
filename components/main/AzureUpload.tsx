@@ -4,7 +4,7 @@ import { Upload, ImageIcon, X, Loader2 } from "lucide-react";
 import Image from "next/image";
 
 interface AzureUploadProps {
-  onImageUpload: (url: string) => void;
+  onImageUpload: (url: string, fileName: string) => void;
   currentImageUrl?: string;
   onRemoveImage: () => void;
 }
@@ -16,6 +16,7 @@ export function AzureUpload({
 }: AzureUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -25,8 +26,10 @@ export function AzureUpload({
 
     setIsUploading(true);
     setUploadError("");
+    setUploadProgress(0);
 
     try {
+      // Validate file
       if (file.size > 5 * 1024 * 1024) {
         throw new Error("File size exceeds 5MB limit");
       }
@@ -35,29 +38,28 @@ export function AzureUpload({
         throw new Error("Please select an image file");
       }
 
-      let base64Data = await fileToBase64(file);
-      base64Data = base64Data.split(",")[1];
-
-      const response = await fetch("/api/upload", {
+      const sasResponse = await fetch("/api/generate-sas", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          base64Image: base64Data,
           fileName: file.name,
           contentType: file.type,
         }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Upload failed");
+      if (!sasResponse.ok) {
+        const errorData = await sasResponse.json();
+        throw new Error(errorData.error || "Failed to get upload URL");
       }
 
-      const data = await response.json();
-      console.log("Upload successful:", data);
-      onImageUpload(data.url);
+      const { uploadUrl, blobName, readUrl } = await sasResponse.json();
+
+      await uploadFileWithProgress(file, uploadUrl);
+
+      console.log("Upload successful");
+      onImageUpload(readUrl, blobName);
     } catch (error) {
       console.error("Upload error:", error);
       setUploadError(
@@ -68,12 +70,39 @@ export function AzureUpload({
     }
   };
 
-  const fileToBase64 = (file: File): Promise<string> => {
+  const uploadFileWithProgress = (
+    file: File,
+    uploadUrl: string
+  ): Promise<void> => {
     return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
+      const xhr = new XMLHttpRequest();
+
+      xhr.open("PUT", uploadUrl, true);
+      xhr.setRequestHeader("x-ms-blob-type", "BlockBlob");
+      xhr.setRequestHeader("Content-Type", file.type);
+
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const percentComplete = Math.round(
+            (event.loaded / event.total) * 100
+          );
+          setUploadProgress(percentComplete);
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve();
+        } else {
+          reject(new Error(`Upload failed with status: ${xhr.status}`));
+        }
+      };
+
+      xhr.onerror = () => {
+        reject(new Error("Network error during upload"));
+      };
+
+      xhr.send(file);
     });
   };
 
@@ -97,7 +126,7 @@ export function AzureUpload({
         {isUploading ? (
           <div className="flex items-center gap-2">
             <Loader2 size={18} className="animate-spin" />
-            <span>Uploading...</span>
+            <span>Uploading... {uploadProgress}%</span>
           </div>
         ) : currentImageUrl ? (
           <div className="flex items-center gap-2">
@@ -113,7 +142,8 @@ export function AzureUpload({
       </Button>
 
       <p className="text-sm text-gray-500 mt-1">
-        You can upload images up to 5MB in size and in JPEG, PNG, or GIF formats.
+        You can upload images up to 5MB in size and in JPEG, PNG, or GIF
+        formats.
       </p>
 
       {currentImageUrl && !isUploading && (
@@ -132,6 +162,15 @@ export function AzureUpload({
 
       {uploadError && <p className="text-sm text-red-500">{uploadError}</p>}
 
+      {isUploading && (
+        <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+          <div
+            className="bg-blue-600 h-2.5 rounded-full"
+            style={{ width: `${uploadProgress}%` }}
+          ></div>
+        </div>
+      )}
+
       {currentImageUrl && (
         <div className="relative w-full h-40 mt-2 rounded-md overflow-hidden">
           <Image
@@ -139,13 +178,12 @@ export function AzureUpload({
             alt="Uploaded Image"
             width={1000}
             height={600}
-            className="rounded-md "
-            objectPosition="center"
-            objectFit="cover"
+            className="rounded-md"
+            
             priority
             onError={() => {
               setUploadError("Failed to load image");
-              onRemoveImage(); 
+              onRemoveImage();
             }}
           />
         </div>
