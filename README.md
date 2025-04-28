@@ -16,7 +16,7 @@ A full-stack blog application built with Next.js, PostgreSQL, and Prisma. This a
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/your-username/blog-app.git
+   git clone https://github.com/YuKiFdo/blogging_app.git
    cd blog-app
    ```
 
