@@ -32,18 +32,30 @@ export async function POST(request: Request) {
     try {
         const buffer = Buffer.from(base64Image, 'base64');
         await blockBlobClient.uploadData(buffer, { blobHTTPHeaders: { blobContentType: contentType } });
-
         const sasToken = await generateSasToken(accountName, accountKey, containerName, blobName);
         const imageUrl = `https://${accountName}.blob.core.windows.net/${containerName}/${blobName}?${sasToken}`;
-
         return NextResponse.json({
             url: imageUrl,
             fileName: blobName
         });
-    } catch (error) {
-        console.error("Error uploading to Azure Blob Storage:", error);
+    } catch (error: any) {
+        if (error instanceof Error) {
+            console.error("Error uploading to Azure Blob Storage:", error.message);
+        }
+        else if (error instanceof BlobServiceClient) {
+            console.error("BlobServiceClient error:", error);
+        }
+        else if (error instanceof StorageSharedKeyCredential) {
+            console.error("StorageSharedKeyCredential error:", error);
+        }
+        else if (error instanceof BlobSASPermissions) {
+            console.error("BlobSASPermissions error:", error);
+        }
+
+        console.error("Error uploading to Azure Blob Storage:", error.message);
         return NextResponse.json({ error: "Failed to upload image" }, { status: 500 });
     }
+
 }
 
 export async function DELETE(request: Request) {
@@ -89,7 +101,7 @@ async function generateSasToken(accountName: string, accountKey: string, contain
         startsOn: new Date(),
         expiresOn: new Date(new Date().valueOf() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
         protocol: SASProtocol.Https,
-    }, sharedKeyCredential).toString(); 
+    }, sharedKeyCredential).toString();
 
     return sasToken;
 }
