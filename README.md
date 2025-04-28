@@ -93,6 +93,7 @@ The database schema is defined in `prisma/schema.prisma`. It includes the follow
 #### Admin API
 - **`GET /api/admin/users`** - Retrieve a list of all users.
 - **`GET /api/admin/users/:id`** - Retrieve details of a specific user by ID.
+- **`PUT /api/admin/users/"id`** - Update user detailes of specific user by ID
 
 #### Authentication API
 - **`POST /api/auth`** - Handle authentication (login, register, etc.).
@@ -112,12 +113,14 @@ The database schema is defined in `prisma/schema.prisma`. It includes the follow
 - **`POST /api/posts/:slug/likes`** - Like a post.
 - **`POST /api/posts/:slug/publish`** - Publish a post.
 - **`POST /api/posts/:slug/save`** - Save a post for later reading.
+ - **`PUT /api/posts/:slug`** - Update Post detailes of specific post by slug
+
 
 #### Stats API
 - **`GET /api/stats`** - Retrieve general statistics for the blog (e.g., total posts, users, etc.).
 - **`GET /api/stats/top-posts`** - Retrieve the top-performing posts based on views, likes, etc.
 
 #### File Upload API
-- **`POST /api/upload`** - Upload files (e.g., images, documents) for posts or profile pictures.
+- **`POST /api/upload`** - Upload files (e.g., images) for posts.
 
 
