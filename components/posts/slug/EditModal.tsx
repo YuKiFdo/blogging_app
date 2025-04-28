@@ -1,97 +1,105 @@
-"use client"
+"use client";
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { useState, useEffect } from "react"
-import { toast } from "sonner"
-import { Pencil } from "lucide-react"
-import RichTextEditor from "@/components/posts/RichTextEditor"
-import { useRouter } from "next/navigation"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
+import { Pencil } from "lucide-react";
+import RichTextEditor from "@/components/posts/RichTextEditor";
+import { useRouter } from "next/navigation";
+import { AzureUpload } from "@/components/main/AzureUpload"; // Import your AzureUpload component
 
 interface Category {
-  id: string
-  name: string
+  id: string;
+  name: string;
 }
 
 interface Tag {
-  id: string
-  name: string
+  id: string;
+  name: string;
 }
 
 interface Post {
-  id: string
-  slug: string
-  title: string
-  content: string
-  imageUrl: string | null
-  Category: Category[]
-  Tag: Tag[]
+  id: string;
+  slug: string;
+  title: string;
+  content: string;
+  imageUrl: string | null;
+  Category: Category[];
+  Tag: Tag[];
 }
 
 interface EditModalProps {
-  post: Post
+  post: Post;
 }
 
 export default function EditModal({ post }: EditModalProps) {
-  const [open, setOpen] = useState(false)
-  const [title, setTitle] = useState(post.title)
-  const [content, setContent] = useState(post.content)
-  const [slug, setSlug] = useState(post.slug)
-  const [imageUrl, setImageUrl] = useState(post.imageUrl || "")
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState(post.title);
+  const [content, setContent] = useState(post.content);
+  const [slug, setSlug] = useState(post.slug);
+  const [imageUrl, setImageUrl] = useState(post.imageUrl || "");
   const [selectedCategories, setSelectedCategories] = useState<string[]>(
-    post.Category.map(c => c.id)
-  )
+    post.Category.map((c) => c.id)
+  );
   const [selectedTags, setSelectedTags] = useState<string[]>(
-    post.Tag.map(t => t.id)
-  )
-  const [categories, setCategories] = useState<Category[]>([])
-  const [tags, setTags] = useState<Tag[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+    post.Tag.map((t) => t.id)
+  );
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchCategoriesAndTags = async () => {
       try {
         const [categoriesRes, tagsRes] = await Promise.all([
-          fetch('/api/categories'),
-          fetch('/api/tags')
-        ])
-        
+          fetch("/api/categories"),
+          fetch("/api/tags"),
+        ]);
+
         if (!categoriesRes.ok || !tagsRes.ok) {
-          throw new Error('Failed to fetch categories or tags')
+          throw new Error("Failed to fetch categories or tags");
         }
-        
+
         const [categoriesData, tagsData] = await Promise.all([
           categoriesRes.json(),
-          tagsRes.json()
-        ])
-        
-        setCategories(categoriesData)
-        setTags(tagsData)
+          tagsRes.json(),
+        ]);
+
+        setCategories(categoriesData);
+        setTags(tagsData);
       } catch (error) {
-        console.error('Error fetching categories and tags:', error)
-        toast.error('Failed to load categories and tags')
+        console.error("Error fetching categories and tags:", error);
+        toast.error("Failed to load categories and tags");
       }
-    }
+    };
 
     if (open) {
-      fetchCategoriesAndTags()
+      fetchCategoriesAndTags();
     }
-  }, [open])
+  }, [open]);
 
   const handleSave = async () => {
     if (!title.trim() || !content.trim()) {
-      toast.error('Title and content are required')
-      return
+      toast.error("Title and content are required");
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
       const response = await fetch(`/api/posts/${post.slug}`, {
-        method: 'PATCH',
+        method: "PATCH",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           title,
@@ -101,35 +109,32 @@ export default function EditModal({ post }: EditModalProps) {
           categoryIds: selectedCategories,
           tagIds: selectedTags,
         }),
-      })
-
-      console.log(response)
+      });
 
       if (!response.ok) {
-        throw new Error('Failed to update post')
+        throw new Error("Failed to update post");
       }
 
-      toast.success('Post updated successfully')
-      setOpen(false)
-      router.refresh()
+      toast.success("Post updated successfully");
+      setOpen(false);
+      router.refresh();
     } catch (error) {
-      console.error('Error updating post:', error)
-      toast.error('Failed to update post')
+      console.error("Error updating post:", error);
+      toast.error("Failed to update post");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newTitle = e.target.value
-    setTitle(newTitle)
-    // Generate slug from title
+    const newTitle = e.target.value;
+    setTitle(newTitle);
     const newSlug = newTitle
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '')
-    setSlug(newSlug)
-  }
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+    setSlug(newSlug);
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -138,12 +143,12 @@ export default function EditModal({ post }: EditModalProps) {
           <Pencil className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-[95vw] sm:max-w-3xl p-4 sm:p-6">
+      <DialogContent className="max-w-[95vw] sm:max-w-3xl p-4 sm:p-6 flex flex-col max-h-[80vh]">
         <DialogHeader>
           <DialogTitle>Edit Post</DialogTitle>
         </DialogHeader>
-        
-        <div className="space-y-4">
+
+        <div className="flex-1 overflow-y-auto space-y-4">
           <div>
             <label className="text-sm font-medium mb-1 block">Title</label>
             <Input
@@ -164,22 +169,20 @@ export default function EditModal({ post }: EditModalProps) {
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-1 block">Featured Image URL</label>
-            <Input
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              placeholder="Enter image URL"
-              className="w-full"
+            <label className="text-sm font-medium mb-1 block">
+              Featured Image
+            </label>
+            <AzureUpload
+              onImageUpload={(url) => setImageUrl(url)}
+              currentImageUrl={imageUrl}
+              onRemoveImage={() => setImageUrl("")}
             />
           </div>
 
           <div>
             <label className="text-sm font-medium mb-1 block">Content</label>
             <div className="w-full">
-              <RichTextEditor
-                content={content}
-                onChange={setContent}
-              />
+              <RichTextEditor content={content} onChange={setContent} />
             </div>
           </div>
 
@@ -189,15 +192,19 @@ export default function EditModal({ post }: EditModalProps) {
               {categories.map((category) => (
                 <Button
                   key={category.id}
-                  variant={selectedCategories.includes(category.id) ? "default" : "outline"}
+                  variant={
+                    selectedCategories.includes(category.id)
+                      ? "default"
+                      : "outline"
+                  }
                   size="sm"
                   className="h-8 px-3 text-sm"
                   onClick={() => {
-                    setSelectedCategories(prev =>
+                    setSelectedCategories((prev) =>
                       prev.includes(category.id)
-                        ? prev.filter(id => id !== category.id)
+                        ? prev.filter((id) => id !== category.id)
                         : [...prev, category.id]
-                    )
+                    );
                   }}
                 >
                   {category.name}
@@ -212,15 +219,17 @@ export default function EditModal({ post }: EditModalProps) {
               {tags.map((tag) => (
                 <Button
                   key={tag.id}
-                  variant={selectedTags.includes(tag.id) ? "default" : "outline"}
+                  variant={
+                    selectedTags.includes(tag.id) ? "default" : "outline"
+                  }
                   size="sm"
                   className="h-8 px-3 text-sm"
                   onClick={() => {
-                    setSelectedTags(prev =>
+                    setSelectedTags((prev) =>
                       prev.includes(tag.id)
-                        ? prev.filter(id => id !== tag.id)
+                        ? prev.filter((id) => id !== tag.id)
                         : [...prev, tag.id]
-                    )
+                    );
                   }}
                 >
                   {tag.name}
@@ -230,7 +239,7 @@ export default function EditModal({ post }: EditModalProps) {
           </div>
         </div>
 
-        <DialogFooter className="flex flex-col sm:flex-row gap-2 ">
+        <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 mt-2">
           <Button
             variant="outline"
             onClick={() => setOpen(false)}
@@ -249,5 +258,5 @@ export default function EditModal({ post }: EditModalProps) {
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
